@@ -18,53 +18,51 @@ const (
 )
 
 type Config struct {
-	Region   string
-	Bucket   string
-	Interval int
-	ID       string
-	Secret   string
-	Token    string
+	Region   *string
+	Bucket   *string
+	Interval *int
+	ID       *string
+	Secret   *string
+	Token    *string
 }
 
 func main() {
 	var c Config
-	c.Bucket = *flag.String("bucket", "", "AWS S3 bucket name absolute path")
-	c.ID = *flag.String("id", "", "AWS Account ID")
-	c.Secret = *flag.String("secret", "", "AWS Secret Token")
-	c.Token = *flag.String("token", "", "AWS Token")
-	c.Region = *flag.String("region", DEFAULT_REGION, "AWS region")
+	c.Bucket = flag.String("bucket", "", "AWS S3 bucket name absolute path")
+	c.ID = flag.String("id", "", "AWS Account Key ID")
+	c.Secret = flag.String("secret", "", "AWS Secret Access Token")
+	c.Token = flag.String("token", "", "AWS session token(optional)")
+	c.Region = flag.String("region", DEFAULT_REGION, "AWS region")
 
-	c.Interval = *flag.Int("interval", DEFAYLT_INTERVAL, "interval seconds until S3 last modified")
+	c.Interval = flag.Int("interval", DEFAYLT_INTERVAL, "interval seconds until S3 last modified")
 	flag.Usage = func() {
 		fmt.Println("Description: check last modified object in AWS S3 folder  until  -interval seconds")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
 
-	if c.Bucket == "" {
+	if *c.Bucket == "" {
+		fmt.Println("option: -bucket required")
 		flag.Usage()
 		os.Exit(1)
 		return
 	}
-	if c.ID == "" {
+	if *c.ID == "" {
+		fmt.Println("option: -id required")
 		flag.Usage()
 		os.Exit(1)
 		return
 	}
-	if c.Token == "" {
-		flag.Usage()
-		os.Exit(1)
-		return
-	}
-	if c.Secret == "" {
+	if *c.Secret == "" {
+		fmt.Println("option: -secret required")
 		flag.Usage()
 		os.Exit(1)
 		return
 	}
 
 	sess, err := session.NewSession(&aws.Config{
-		Region:      aws.String(c.Region),
-		Credentials: credentials.NewStaticCredentials(c.ID, c.Secret, c.Token),
+		Region:      aws.String(*c.Region),
+		Credentials: credentials.NewStaticCredentials(*c.ID, *c.Secret, *c.Token),
 	})
 	if err != nil {
 		fmt.Printf("WARNING: error: %v\n", err)
@@ -72,7 +70,7 @@ func main() {
 	}
 	svc := s3.New(sess)
 	input := &s3.ListObjectsInput{
-		Bucket: &c.Bucket,
+		Bucket: aws.String(*c.Bucket),
 	}
 
 	output, err := svc.ListObjects(input)
@@ -81,16 +79,16 @@ func main() {
 		os.Exit(1)
 		return
 	}
-	interval := time.Duration(c.Interval) * time.Second
-	period := time.Now().Add(interval)
+	interval := time.Duration(*c.Interval) * time.Second
+	period := time.Now().Add(-interval)
 	for _, obj := range output.Contents {
 		if obj.LastModified.After(period) {
 			fmt.Printf("OK: last modified at %s\n", obj.LastModified.String())
 			return
 		}
 	}
-	os.Exit(1)
 	fmt.Printf("WARNING: not found modified object until %s\n", period.String())
+	os.Exit(1)
 	return
 
 }
