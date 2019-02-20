@@ -12,6 +12,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
+var (
+	VERSION string
+)
+
 const (
 	DEFAULT_REGION   = "ap-northeast-1"
 	DEFAYLT_INTERVAL = 60 * 60 * 24
@@ -24,6 +28,7 @@ type Config struct {
 	ID       *string
 	Secret   *string
 	Token    *string
+	Version  *bool
 }
 
 func main() {
@@ -33,14 +38,20 @@ func main() {
 	c.Secret = flag.String("secret", "", "AWS Secret Access Token")
 	c.Token = flag.String("token", "", "AWS session token(optional)")
 	c.Region = flag.String("region", DEFAULT_REGION, "AWS region")
+	c.Version = flag.Bool("version", false, "version")
 
 	c.Interval = flag.Int("interval", DEFAYLT_INTERVAL, "interval seconds until S3 last modified")
 	flag.Usage = func() {
-		fmt.Println("Description: check last modified object in AWS S3 folder  until  -interval seconds")
+		fmt.Println("Description: check last modified object in AWS S3 folder  until  -interval seconds\n")
+		fmt.Printf("Version: %s\n", VERSION)
 		flag.PrintDefaults()
 	}
 	flag.Parse()
 
+	if *c.Version {
+		flag.Usage()
+		return
+	}
 	if *c.Bucket == "" {
 		fmt.Println("option: -bucket required")
 		flag.Usage()

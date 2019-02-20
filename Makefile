@@ -1,4 +1,5 @@
 .PHONU: help build
+VERSION := 0.0.1
 
 .DEFAULT_GOAL := build
 help: ## help
@@ -6,4 +7,4 @@ help: ## help
 
 
 build: ## build binary
-	@go build
+	@go build -ldflags "-X main.Version=${VERSION}"
