@@ -28,14 +28,15 @@ type Config struct {
 
 func main() {
 	var c Config
-	c.Bucket = *flag.String("bucket", "", "S3 bucket name absolute path")
+	c.Bucket = *flag.String("bucket", "", "AWS S3 bucket name absolute path")
 	c.ID = *flag.String("id", "", "AWS Account ID")
 	c.Secret = *flag.String("secret", "", "AWS Secret Token")
 	c.Token = *flag.String("token", "", "AWS Token")
-	c.Interval = *flag.Int("interval", DEFAYLT_INTERVAL, "interval seconds until S3 last modified")
 	c.Region = *flag.String("region", DEFAULT_REGION, "AWS region")
+
+	c.Interval = *flag.Int("interval", DEFAYLT_INTERVAL, "interval seconds until S3 last modified")
 	flag.Usage = func() {
-		fmt.Println("Usage: check  last modified object in AWS S3 folder  until  -interval seconds")
+		fmt.Println("Description: check last modified object in AWS S3 folder  until  -interval seconds")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
