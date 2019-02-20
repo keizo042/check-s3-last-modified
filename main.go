@@ -34,6 +34,11 @@ func main() {
 	c.Token = *flag.String("token", "", "AWS Token")
 	c.Interval = *flag.Int("interval", DEFAYLT_INTERVAL, "interval seconds until S3 last modified")
 	c.Region = *flag.String("region", DEFAULT_REGION, "AWS region")
+	flag.Usage = func() {
+		fmt.Println("Usage: check  last modified object in AWS S3 folder  until  -interval seconds")
+		flag.PrintDefaults()
+	}
+	flag.Parse()
 
 	if c.Bucket == "" {
 		flag.Usage()
@@ -55,6 +60,7 @@ func main() {
 		os.Exit(1)
 		return
 	}
+
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String(c.Region),
 		Credentials: credentials.NewStaticCredentials(c.ID, c.Secret, c.Token),
