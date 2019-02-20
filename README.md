@@ -28,4 +28,4 @@ MIT License
 Author:
 -------
 
-Copyright Koichi Nakanishi(keizo042)
+Copyright 2019~ Koichi Nakanishi (keizo042)
