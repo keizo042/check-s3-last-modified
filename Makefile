@@ -1,5 +1,6 @@
-.PHONU: help build
+.PHONU: help build dep
 VERSION := 0.0.1
+NAME :=  check-s3-last-modified
 
 .DEFAULT_GOAL := build
 help: ## help
@@ -7,4 +8,7 @@ help: ## help
 
 
 build: ## build binary
-	@go build -ldflags "-X main.Version=${VERSION}"
+	@go build -ldflags "-X main.Version=${VERSION}" -o "${NAME}"
+
+dep:  ## install deps packages
+	@dep ensure
