@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -29,16 +30,18 @@ type Config struct {
 	Secret   *string
 	Token    *string
 	Version  *bool
+	Prefix   *string
 }
 
 func main() {
 	var c Config
-	c.Bucket = flag.String("bucket", "", "AWS S3 bucket name absolute path")
+	c.Bucket = flag.String("bucket", "", "AWS S3 bucket name without s3://")
 	c.ID = flag.String("id", "", "AWS Account Key ID")
 	c.Secret = flag.String("secret", "", "AWS Secret Access Token")
 	c.Token = flag.String("token", "", "AWS session token(optional)")
 	c.Region = flag.String("region", DEFAULT_REGION, "AWS region")
 	c.Version = flag.Bool("version", false, "version")
+	c.Prefix = flag.String("prefix", "", "AWS s3 directory prefix, not path")
 
 	c.Interval = flag.Int("interval", DEFAYLT_INTERVAL, "interval seconds until S3 last modified")
 	flag.Usage = func() {
@@ -82,6 +85,7 @@ func main() {
 	svc := s3.New(sess)
 	input := &s3.ListObjectsInput{
 		Bucket: aws.String(*c.Bucket),
+		Prefix: aws.String(*c.Prefix),
 	}
 
 	output, err := svc.ListObjects(input)
@@ -94,11 +98,16 @@ func main() {
 	period := time.Now().Add(-interval)
 	for _, obj := range output.Contents {
 		if obj.LastModified.After(period) {
-			fmt.Printf("OK: last modified at %s\n", obj.LastModified.String())
+			fmt.Printf("OK: last modified at %s in s3://%s\n",
+				obj.LastModified.String(),
+				path.Join(*c.Bucket, *c.Prefix))
 			return
 		}
 	}
-	fmt.Printf("WARNING: not found modified object until %s\n", period.String())
+	fmt.Printf("WARNING: not found modified object until %s\n in s3://%s\n",
+		period.String(),
+		path.Join(*c.Bucket, *c.Prefix))
+
 	os.Exit(1)
 	return
 
