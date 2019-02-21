@@ -18,8 +18,9 @@ var (
 )
 
 const (
-	DEFAULT_REGION   = "ap-northeast-1"
-	DEFAYLT_INTERVAL = 60 * 60 * 24
+	DEFAULT_REGION         = "ap-northeast-1"
+	DEFAYLT_INTERVAL       = 60 * 60 * 24
+	MAX_KEYS         int64 = 10000
 )
 
 type Config struct {
@@ -82,32 +83,41 @@ func main() {
 		fmt.Printf("WARNING: error: %v\n", err)
 		os.Exit(1)
 	}
+
 	svc := s3.New(sess)
 	input := &s3.ListObjectsInput{
-		Bucket: aws.String(*c.Bucket),
-		Prefix: aws.String(*c.Prefix),
+		Bucket:  aws.String(*c.Bucket),
+		Prefix:  aws.String(*c.Prefix),
+		MaxKeys: aws.Int64(MAX_KEYS),
 	}
 
-	output, err := svc.ListObjects(input)
-	if err != nil {
+	var (
+		interval = time.Duration(*c.Interval) * time.Second
+		period   = time.Now().Add(-interval)
+	)
+	outputHandler := func(output *s3.ListObjectsOutput, lastPages bool) bool {
+		for _, obj := range output.Contents {
+			if obj.LastModified.After(period) {
+				fmt.Printf("OK: last modified at %s in s3://%s\n",
+					obj.LastModified.String(),
+					path.Join(*c.Bucket, *c.Prefix))
+				return true
+			}
+		}
+		if int64(len(output.Contents)) < MAX_KEYS || lastPages {
+			fmt.Printf("WARNING: not found modified object until %s\n in s3://%s\n",
+				period.String(),
+				path.Join(*c.Bucket, *c.Prefix))
+			return false
+		}
+		return true
+	}
+
+	if err := svc.ListObjectsPages(input, outputHandler); err != nil {
 		fmt.Printf("WARNING: error: %v\n", err)
 		os.Exit(1)
 		return
 	}
-	interval := time.Duration(*c.Interval) * time.Second
-	period := time.Now().Add(-interval)
-	for _, obj := range output.Contents {
-		if obj.LastModified.After(period) {
-			fmt.Printf("OK: last modified at %s in s3://%s\n",
-				obj.LastModified.String(),
-				path.Join(*c.Bucket, *c.Prefix))
-			return
-		}
-	}
-	fmt.Printf("WARNING: not found modified object until %s\n in s3://%s\n",
-		period.String(),
-		path.Join(*c.Bucket, *c.Prefix))
-
 	os.Exit(1)
 	return
 
