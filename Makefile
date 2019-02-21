@@ -1,5 +1,5 @@
 .PHONU: help build dep
-VERSION := 0.0.3
+VERSION := 0.0.4
 NAME :=  check-s3-last-modified
 
 .DEFAULT_GOAL := build
